@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resume Analyser</title>
+    <style>
+        html, body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f0f4f0;
+        }
+
+        .page {
+            flex: 1;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            padding: 30px;
+            width: 80%;
+            max-width: 900px;
+        }
+
+        .form-container {
+            background-color: #e0f7fa;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .form-container h2 {
+            color: rgb(10, 10, 10);
+        }
+
+        .form-container p {
+            text-align: center;
+            color:rgb(0, 0, 0);
+            margin-bottom: 20px;
+        }
+
+        .form-container label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            text-align: left;
+            width: 100%;
+            color: rgb(10, 10, 10); 
+        }
+
+        .form-container textarea,
+        .form-container input[type="file"],
+        .form-container input[type="number"],
+        .form-container input[type="text"] {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: calc(100% - 22px);
+            box-sizing: border-box;
+            resize: vertical; 
+        }
+
+        .form-container button {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+
+        .dynamic-files {
+            width: 100%;
+        }
+
+        .dynamic-files label {
+            margin-top: 10px;
+            display: block;
+            font-weight: bold;
+        }
+
+        .result {
+            font-size: 1.2em;
+            color: rgb(0, 0, 0);
+            text-align: left;
+            margin-top: 20px;
+        }
+        .result ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .result li {
+            padding: 5px 0;
+        }
+
+        footer {
+            background-color: #222;
+            color: #fff;
+            text-align: center;
+            padding: 15px 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="form-container">
+        <h2>Welcome, Recruiter!</h2>
+        <p>
+            Welcome Recruiter! To get started, please enter the Job Description for the position you are hiring for. Then, specify the number of resumes you will upload and proceed to upload the resume files. I will sort them to the most attractive to least attractive based on the job description.
+        </p>
+        <form id="recruiterForm" action="/recuiter_analyse" method="post" enctype="multipart/form-data">
+
+            <label for="jobDescription">Job Description:</label>
+            <textarea id="jobDescription" name="jobDescription" rows="6" placeholder="Enter job description" required></textarea>
+
+            <label for="resumeCount">Number of Resumes:</label>
+            <input type="number" id="resumeCount" name="resumeCount" min="1" placeholder="Enter number of resumes" required>
+
+            <div id="fileInputsContainer" class="dynamic-files"></div>
+
+            <button type="submit">Analyze Resumes</button>
+        </form>
+
+        {% if ranked_resumes %}
+            <div class="result">
+                <h3>Ranked Resume Scores:</h3>
+                <ul>
+                    {% for idx, score in ranked_resumes %}
+                        <li>Resume {{ idx + 1 }} → Score: {{ "%.4f"|format(score) }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<footer>
+    &copy; 2025 Resume Analyser | It can make mistakes. Cross check personally before proceeding | Created with love ❤️, by ParuchuruTarun.
+</footer>
+
+<script>
+    const resumeCountInput = document.getElementById("resumeCount");
+    const fileInputsContainer = document.getElementById("fileInputsContainer");
+
+    resumeCountInput.addEventListener("input", () => {
+        fileInputsContainer.innerHTML = ""; // Clear previous inputs
+        const count = parseInt(resumeCountInput.value);
+        if (isNaN(count) || count <= 0) return;
+
+        for (let i = 1; i <= count; i++) {
+            const label = document.createElement("label");
+            label.textContent = `Resume File ${i}:`;
+            const input = document.createElement("input");
+            input.type = "file";
+            input.name = `resumeFile${i}`;
+            input.accept = ".pdf";
+            input.required = true;
+
+            fileInputsContainer.appendChild(label);
+            fileInputsContainer.appendChild(input);
+        }
+    });
+</script>
+</body>
+</html>
