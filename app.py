@@ -16,6 +16,10 @@ app = Flask(__name__)
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Load models once globally to avoid reloading in each request
+model = SentenceTransformer('paraphrase-MiniLM-L3-v2')
+nlp = spacy.load("en_core_web_sm")
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -76,21 +80,24 @@ def applicant_analyse():
     if resume_file:
         filename = secure_filename(resume_file.filename)
         file_path = os.path.join(UPLOAD_FOLDER, filename)
-        # resume_file.save(file_path)
-
+        
+        resume_file.save(file_path)
         resume_text = ""
-        doc = fitz.open(file_path)
-        for page in doc:
+        doc_fitz = fitz.open(file_path)
+        for page in doc_fitz:
             resume_text += page.get_text()
+        doc_fitz.close()
+
         resume_data = [resume_text]
+        doc = nlp(resume_text)
 
         # Step 2: Compute embeddings
-        model = SentenceTransformer('all-MiniLM-L6-v2')
+        # model = SentenceTransformer('all-MiniLM-L6-v2')
         jd_embedding = model.encode([job_description])[0]
         resume_embeddings = model.encode(resume_data)
 
         # Step 3: Load spaCy model
-        nlp = spacy.load("en_core_web_sm")
+        # nlp = spacy.load("en_core_web_sm")
         file_path = file_path
         text = extract_text(file_path)
         # NLP doc
@@ -98,12 +105,12 @@ def applicant_analyse():
 
         parsed_data = {
             "Name": extract_name(doc),
-            "Email": extract_email(text),
-            "Phone": extract_phone(text),
-            "Skills": extract_skills(text),
-            "Degrees": extract_degrees(text),
-            "Experience": extract_experience(text),
-            "Projects": extract_projects(text)
+            "Email": extract_email(resume_text),
+            "Phone": extract_phone(resume_text),
+            "Skills": extract_skills(resume_text),
+            "Degrees": extract_degrees(resume_text),
+            "Experience": extract_experience(resume_text),
+            "Projects": extract_projects(resume_text)
         }
 
         # Step 4: Compute cosine similarities
@@ -146,14 +153,14 @@ def recuiter_analyse():
         if resume_file:
             filename = secure_filename(resume_file.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
-            # resume_file.save(file_path)
-            # Extract text using PyMuPDF
+            resume_file.save(file_path)
+
             resume_text = ""
             try:
-                doc = fitz.open(file_path)
-                for page in doc:
+                doc_fitz = fitz.open(file_path)
+                for page in doc_fitz:
                     resume_text += page.get_text()
-                doc.close()
+                doc_fitz.close()
                 resume_texts.append(resume_text)
             except Exception as e:
                 print(f"Error reading resume {filename}: {e}")
@@ -164,7 +171,7 @@ def recuiter_analyse():
         return redirect(request.url)
 
     # Step 3: Compute embeddings
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    # model = SentenceTransformer('all-MiniLM-L6-v2')
     jd_embedding = model.encode([job_description])
     resume_embeddings = model.encode(resume_texts)
 
